@@ -2,7 +2,7 @@ from lib2to3.pgen2 import token
 
 
 class Scanner():
-    ESTADOS={'start':False,'end':False,'other':False,'inid':False,'incomment':False,'indiv':False}
+    ESTADOS={'start':False,'end':False,'other':False,'inid':False,'inmult':False,'indiv':False,}
 
     PCHAVES=['else','if','int','return','void','while']
 
@@ -12,25 +12,25 @@ class Scanner():
     DIGITO=['0','1','2','3','4','5','6','7','8','9']
 
     OPERADORES={
-        '+': '',
-        '-': '',
+        '+': 'add',
+        '-': 'minus',
         '*': 'mult',
         '/': 'div',
-        '<': '',
+        '<': 'menor',
         '<=' : '',
-        '>': '',
+        '>': 'maior',
         '>=' : '',
         '==' : '',
         '!=' : '',
-        '=': '',
+        '=': 'attr',
         ';': 'pontovirgula',
-        ',': '',
-        '(': '',
-        ')': '',
-        '[': '',
-        ']': '',
-        '{': '',        
-        '}': '',
+        ',': 'virgula',
+        '(': 'parentop',
+        ')': 'parented',
+        '[': 'colcheop',
+        ']': 'colcheed',
+        '{': 'chavesop',        
+        '}': 'chavesed',
         '/*': 'opcomment', 
         '*/': 'endcomment'
     }
@@ -86,7 +86,8 @@ class Scanner():
             programa=self.leitura(nomeArq)
             for linha in programa:
                 index=str(programa.index(linha))
-                token=''
+                if self.getEstado('start'):
+                    token=''
                 for c in linha:
                     if self.getEstado('start'):
                         if c==' ':
@@ -96,6 +97,8 @@ class Scanner():
                         elif self.vOperador(c):
                             if c=='/':
                                 self.setEstado('indiv')
+                            elif c=='*':
+                                self.setEstado('inmult')
                             else:
                                 self.setEstado('end')
 
@@ -110,7 +113,19 @@ class Scanner():
 
                     elif self.getEstado('indiv'):
                         if c=='*':
-                            self.setEstado('incomment')
+                            self.setEstado('end')
+                        elif c==' ':
+                            c=''
+                            self.setEstado('end')
+                        else:
+                            self.setEstado('other')
+
+                    elif self.getEstado('inmult'):
+                        if c=='/':
+                            self.setEstado('end')
+                        elif c==' ':
+                            c=''
+                            self.setEstado('end')
                         else:
                             self.setEstado('other')
 
@@ -123,16 +138,19 @@ class Scanner():
                             token=c
                             if c=='/':
                                 self.setEstado('indiv')
+                            elif c=='*':
+                                self.setEstado('inmult')
                             elif self.vLetra(c):
                                 self.setEstado('inid')
                         else:
                             token=''
                             self.setEstado('start')
                 #quebra de linha
-                if token:
-                    self.classifica(token,index)
-                    if self.getEstado('other'):
-                        pass    
+                # if token:
+                #     if not (self.getEstado('incomment') or self.getEstado('auxcomment')):
+                #         self.classifica(token,index)
+            if token:
+                self.classifica(token,index)  
         except FileNotFoundError:
             raise FileNotFoundError('arquivo não encontrado')
 
