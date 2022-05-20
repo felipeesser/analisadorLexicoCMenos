@@ -2,7 +2,7 @@ from lib2to3.pgen2 import token
 
 
 class Scanner():
-    ESTADOS={'start':False,'end':False,'other':False,'inid':False,'incomment':False}
+    ESTADOS={'start':False,'end':False,'other':False,'inid':False,'incomment':False,'indiv':False}
 
     PCHAVES=['else','if','int','return','void','while']
 
@@ -14,8 +14,8 @@ class Scanner():
     OPERADORES={
         '+': '',
         '-': '',
-        '*': '',
-        '/': '',
+        '*': 'mult',
+        '/': 'div',
         '<': '',
         '<=' : '',
         '>': '',
@@ -23,7 +23,7 @@ class Scanner():
         '==' : '',
         '!=' : '',
         '=': '',
-        ';': '',
+        ';': 'pontovirgula',
         ',': '',
         '(': '',
         ')': '',
@@ -31,8 +31,8 @@ class Scanner():
         ']': '',
         '{': '',        
         '}': '',
-        '/*': '', 
-        '*/': ''
+        '/*': 'opcomment', 
+        '*/': 'endcomment'
     }
     
     def __init__(self):
@@ -62,13 +62,18 @@ class Scanner():
         if token not in self.PCHAVES:
             return False
         return True         
-
+    def vOperador(self,token):
+        if token not in self.OPERADORES:
+            return False
+        return True
     def classifica(self,token,index):
         if self.vPalavra(token):
             if self.vChave(token):
                 self.tokens.append([index,'Palavra-Chave',token])
             else:
                 self.tokens.append([index,'ID',token])
+        elif self.vOperador(token):
+            self.tokens.append([index,self.OPERADORES[token],token])
 
     def leitura(self,nomeArq):
         file=open(nomeArq,'r')
@@ -84,8 +89,15 @@ class Scanner():
                 token=''
                 for c in linha:
                     if self.getEstado('start'):
-                        if self.vLetra(c):
+                        if c==' ':
+                            c=''
+                        elif self.vLetra(c):
                             self.setEstado('inid')
+                        elif self.vOperador(c):
+                            if c=='/':
+                                self.setEstado('indiv')
+                            else:
+                                self.setEstado('end')
 
                     elif self.getEstado('inid'):
                         if self.vLetra(c):
@@ -96,15 +108,26 @@ class Scanner():
                         else:
                             self.setEstado('other')
 
+                    elif self.getEstado('indiv'):
+                        if c=='*':
+                            self.setEstado('incomment')
+                        else:
+                            self.setEstado('other')
+
                     if not self.getEstado('other'):       
                         token+=c
 
                     if self.getEstado('end') or self.getEstado('other'):
                         self.classifica(token,index)
                         if self.getEstado('other'):
-                            pass    
-                        token=''
-                        self.setEstado('start')
+                            token=c
+                            if c=='/':
+                                self.setEstado('indiv')
+                            elif self.vLetra(c):
+                                self.setEstado('inid')
+                        else:
+                            token=''
+                            self.setEstado('start')
                 #quebra de linha
                 if token:
                     self.classifica(token,index)
