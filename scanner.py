@@ -2,7 +2,8 @@ from lib2to3.pgen2 import token
 
 
 class Scanner():
-    ESTADOS={'start':False,'end':False,'other':False,'inid':False,'inmult':False,'indiv':False,}
+    ESTADOS={'start':False,'end':False,'other':False,'inid':False,'inmult':False,'indiv':False,
+    'incoment':False,'auxcoment':False,'inum':False}
 
     PCHAVES=['else','if','int','return','void','while']
 
@@ -52,6 +53,17 @@ class Scanner():
             return True
         return False
 
+    def vDigito(self,c):
+        if c in self.DIGITO:
+            return True
+        return False
+        
+    def vNumero(self,token):
+        for c in token:
+            if not self.vDigito(c):
+                return False
+        return True
+
     def vPalavra(self,token):
         for c in token:
             if c not in self.LETRA:
@@ -61,11 +73,13 @@ class Scanner():
     def vChave(self,token):
         if token not in self.PCHAVES:
             return False
-        return True         
+        return True        
+         
     def vOperador(self,token):
         if token not in self.OPERADORES:
             return False
-        return True
+        return True  
+
     def classifica(self,token,index):
         if self.vPalavra(token):
             if self.vChave(token):
@@ -74,6 +88,10 @@ class Scanner():
                 self.tokens.append([index,'ID',token])
         elif self.vOperador(token):
             self.tokens.append([index,self.OPERADORES[token],token])
+        elif self.vNumero(token):
+            self.tokens.append([index,'NUM',token])
+        else:
+            self.tokens.append([index,'Comentario',token])
 
     def leitura(self,nomeArq):
         file=open(nomeArq,'r')
@@ -94,6 +112,8 @@ class Scanner():
                             c=''
                         elif self.vLetra(c):
                             self.setEstado('inid')
+                        elif self.vDigito(c):
+                            self.setEstado('inum')
                         elif self.vOperador(c):
                             if c=='/':
                                 self.setEstado('indiv')
@@ -110,10 +130,19 @@ class Scanner():
                             self.setEstado('end')
                         else:
                             self.setEstado('other')
+                    
+                    elif self.getEstado('inum'):
+                        if self.vDigito(c):
+                            self.setEstado('inum')
+                        elif c==' ':
+                            c=''
+                            self.setEstado('end')
+                        else:
+                            self.setEstado('other')
 
                     elif self.getEstado('indiv'):
                         if c=='*':
-                            self.setEstado('end')
+                            self.setEstado('incoment')
                         elif c==' ':
                             c=''
                             self.setEstado('end')
@@ -121,13 +150,24 @@ class Scanner():
                             self.setEstado('other')
 
                     elif self.getEstado('inmult'):
-                        if c=='/':
-                            self.setEstado('end')
-                        elif c==' ':
+                        if c==' ':
                             c=''
                             self.setEstado('end')
                         else:
                             self.setEstado('other')
+                            
+                    elif self.getEstado('incoment'):
+                        if c=='*':
+                            self.setEstado('auxcoment')
+                        else:
+                            self.setEstado('incoment')
+
+                    elif self.getEstado('auxcoment'):
+                        if c=='/':
+                            self.setEstado('end')
+                        else:
+                            self.setEstado('incoment')
+                        
 
                     if not self.getEstado('other'):       
                         token+=c
@@ -140,6 +180,11 @@ class Scanner():
                                 self.setEstado('indiv')
                             elif c=='*':
                                 self.setEstado('inmult')
+                            elif c==' ':
+                                token=''
+                                self.setEstado('start')
+                            elif self.vDigito(c):
+                                self.setEstado('inum')
                             elif self.vLetra(c):
                                 self.setEstado('inid')
                         else:
