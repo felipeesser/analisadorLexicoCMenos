@@ -1,35 +1,10 @@
 import util
-from util import StateType
+from util import StateType, TokenType
 
 
 class Scanner:
-    OPERADORES = {
-        '+': 'add',
-        '-': 'minus',
-        '*': 'mult',
-        '/': 'div',
-        '<': 'menor',
-        '<=': '',
-        '>': 'maior',
-        '>=': '',
-        '==': '',
-        '!=': '',
-        '=': 'attr',
-        ';': 'pontovirgula',
-        ',': 'virgula',
-        '(': 'parentop',
-        ')': 'parented',
-        '[': 'colcheop',
-        ']': 'colcheed',
-        '{': 'chavesop',
-        '}': 'chavesed',
-        '/*': 'opcomment',
-        '*/': 'endcomment'
-    }
-
-    def __init__(self, nomeArquivo):
-        self.tokens = []
-        self.programa = util.readFile(nomeArquivo)
+    def __init__(self, fileName):
+        self.program = util.readFile(fileName)
         self.current_line = ''
         self.lineno = 0
         self.linepos = 0
@@ -38,8 +13,8 @@ class Scanner:
         self.linepos += 1
         if not self.linepos < len(self.current_line):
             self.lineno += 1
-            if self.lineno - 1 < len(self.programa):
-                self.current_line = self.programa[self.lineno - 1]
+            if self.lineno - 1 < len(self.program):
+                self.current_line = self.program[self.lineno - 1]
                 print(str(self.lineno) + ": " + self.current_line)
                 self.linepos = 0
                 if self.current_line == '':
@@ -55,7 +30,7 @@ class Scanner:
 
     def getToken(self):
         token_string = ''
-        current_token = 'other'
+        current_token = TokenType.OTHER
         state = StateType.START
         while not state == StateType.DONE:
             save = True
@@ -72,38 +47,40 @@ class Scanner:
                 else:
                     state = StateType.DONE
                     if c == ';':
-                        current_token = 'pontovirgula'
+                        current_token = TokenType.PONTO_VIRGULA
                     elif c == '+':
-                        current_token = 'add'
+                        current_token = TokenType.MAIS
                     elif c == '-':
-                        current_token = 'minus'
+                        current_token = TokenType.MENOS
                     elif c == '*':
-                        current_token = 'mult'
+                        current_token = TokenType.MULT
                     elif c == '(':
-                        current_token = 'parentop'
+                        current_token = TokenType.PARENT_OP
                     elif c == ')':
-                        current_token = 'parented'
+                        current_token = TokenType.PARENT_ED
                     elif c == '{':
-                        current_token = 'chavesop'
+                        current_token = TokenType.CHAVES_OP
                     elif c == '}':
-                        current_token = 'chavesed'
+                        current_token = TokenType.CHAVES_ED
                     elif c == '[':
-                        current_token = 'colcheop'
+                        current_token = TokenType.COLCH_OP
                     elif c == ']':
-                        current_token = 'colcheed'
+                        current_token = TokenType.COLCH_ED
                     elif c == ',':
-                        current_token = 'virgula'
+                        current_token = TokenType.VIRGULA
+                    elif c == 'EOF':
+                        current_token = TokenType.EOF
             elif state == StateType.INID:
-                if not util.isLetter(c) or c == 'EOF':
+                if not util.isLetter(c):
                     self.ungetNextChar()
                     state = StateType.DONE
-                    current_token = 'ID'
+                    current_token = TokenType.ID
                     save = False
             elif state == StateType.INNUM:
-                if not util.isDigit(c) or c == 'EOF':
+                if not util.isDigit(c):
                     self.ungetNextChar()
                     state = StateType.DONE
-                    current_token = 'NUM'
+                    current_token = TokenType.NUM
                     save = False
             elif state == StateType.MAYBE_COMMENT:
                 if c == '*':
@@ -111,24 +88,27 @@ class Scanner:
                 else:
                     self.ungetNextChar()
                     state = StateType.DONE
-                    current_token = 'div'
+                    current_token = TokenType.DIV
                     save = False
             elif state == StateType.COMMENT:
                 if c == '*':
                     state = StateType.INCOMMENT
+                elif c == 'EOF':
+                    state = StateType.DONE
+                    current_token = TokenType.EOF
             elif state == StateType.INCOMMENT:
                 if c == '/':
                     state = StateType.START
                     token_string = ''
                     save = False
+                elif c == 'EOF':
+                    state = StateType.DONE
+                    current_token = TokenType.EOF
                 else:
-                    state = StateType.INCOMMENT
+                    state = StateType.COMMENT
             if save:
                 token_string += c
-            if token_string == 'EOF':
-                current_token = 'EOF'
-                break
-        if current_token == 'ID':
+        if current_token == TokenType.ID:
             current_token = util.reservedLookup(token_string)
-        print('    ' + str(self.lineno) + ': ' + current_token + ', ' + token_string)
+        util.printToken(current_token, token_string, self.lineno)
         return current_token

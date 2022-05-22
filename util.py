@@ -1,20 +1,40 @@
 from enum import Enum
 
-DIGITS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
-LETTERS = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u',
-           'v', 'w', 'x', 'y', 'z',
-           'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U',
-           'V', 'W', 'X', 'Y', 'Z']
-RESERVED_WORDS = ['else', 'if', 'int', 'return', 'void', 'while']
 
-
+# Enum para os tipos de token
 class TokenType(Enum):
     ID = 1
     NUM = 2
-    PLUS = 3
-    MINUS = 4
+    ATTR = 3
+    MAIS = 4
+    MENOS = 5
+    MULT = 6
+    DIV = 7
+    DIF = 8
+    EQUAL = 9
+    GREAT = 10
+    GREAT_EQUAL = 11
+    LESS = 12
+    LESS_EQUAL = 13
+    COLCH_OP = 14
+    COLCH_ED = 15
+    PARENT_OP = 16
+    PARENT_ED = 17
+    CHAVES_OP = 18
+    CHAVES_ED = 19
+    PONTO_VIRGULA = 20
+    VIRGULA = 21
+    EOF = 23
+    IF = 24
+    ELSE = 25
+    INT = 26
+    RETURN = 27
+    VOID = 28
+    WHILE = 29
+    OTHER = 30  # Remover quando todas estiverem implementadas
 
 
+# Enum para os tipos de estado do scanner
 class StateType(Enum):
     START = 1
     DONE = 2
@@ -25,7 +45,15 @@ class StateType(Enum):
     MAYBE_COMMENT = 7
     COMMENT = 8
     INCOMMENT = 9
-    OTHER = 10
+
+
+DIGITOS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+LETRAS = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u',
+          'v', 'w', 'x', 'y', 'z',
+          'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U',
+          'V', 'W', 'X', 'Y', 'Z']
+PALAVRAS_RESERVADAS = {'if': TokenType.IF, 'else': TokenType.ELSE, 'int': TokenType.INT, 'return': TokenType.RETURN,
+                       'void': TokenType.VOID, 'while': TokenType.WHILE}
 
 
 def readFile(fileName):
@@ -39,23 +67,32 @@ def readFile(fileName):
 
 
 def isDigit(c):
-    if c in DIGITS:
+    if c in DIGITOS:
         return True
     return False
 
 
 def isLetter(c):
-    if c in LETTERS:
+    if c in LETRAS:
         return True
     return False
 
 
 def reservedLookup(tokenString):
-    for palavraChave in RESERVED_WORDS:
+    for palavraChave in PALAVRAS_RESERVADAS:
         if tokenString == palavraChave:
-            return 'Palavra-Chave'
-    return 'ID'
+            return PALAVRAS_RESERVADAS[tokenString]
+    return TokenType.ID
 
 
-def printToken(tokenType, tokenString):
-    pass
+def printToken(tokenType, tokenString, lineno):
+    if tokenType in PALAVRAS_RESERVADAS.values():
+        print('    ' + str(lineno) + ': PALAVRA RESERVADA, ' + tokenString)
+    elif tokenType == TokenType.ID:
+        print('    ' + str(lineno) + ': ' + tokenType.name + ', name = ' + tokenString)
+    elif tokenType == TokenType.NUM:
+        print('    ' + str(lineno) + ': ' + tokenType.name + ', value = ' + tokenString)
+    elif tokenType == TokenType.EOF:
+        print(str(lineno) + ': ' + tokenType.name)
+    else:
+        print('    ' + str(lineno) + ': ' + tokenType.name + ', ' + tokenString)
