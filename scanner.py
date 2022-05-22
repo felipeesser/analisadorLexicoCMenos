@@ -1,27 +1,21 @@
-from lib2to3.pgen2 import token
+import util
 
 
-class Scanner():
-    ESTADOS={'start':False,'end':False,'other':False,'inid':False,'inmult':False,'indiv':False,}
+class Scanner:
+    ESTADOS = {'start': False, 'end': False, 'other': False, 'inid': False, 'inmult': False, 'indiv': False,
+               'innum': False, 'maybecomment': False, 'comment': False, 'incomment': False}
 
-    PCHAVES=['else','if','int','return','void','while']
-
-    LETRA=['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z',
-    'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z']
-
-    DIGITO=['0','1','2','3','4','5','6','7','8','9']
-
-    OPERADORES={
+    OPERADORES = {
         '+': 'add',
         '-': 'minus',
         '*': 'mult',
         '/': 'div',
         '<': 'menor',
-        '<=' : '',
+        '<=': '',
         '>': 'maior',
-        '>=' : '',
-        '==' : '',
-        '!=' : '',
+        '>=': '',
+        '==': '',
+        '!=': '',
         '=': 'attr',
         ';': 'pontovirgula',
         ',': 'virgula',
@@ -29,132 +23,122 @@ class Scanner():
         ')': 'parented',
         '[': 'colcheop',
         ']': 'colcheed',
-        '{': 'chavesop',        
+        '{': 'chavesop',
         '}': 'chavesed',
-        '/*': 'opcomment', 
+        '/*': 'opcomment',
         '*/': 'endcomment'
     }
-    
-    def __init__(self):
+
+    def __init__(self, nomeArquivo):
         self.tokens = []
-        self.setEstado('start')
+        self.programa = util.readFile(nomeArquivo)
+        self.current_line = ''
+        self.lineno = 0
+        self.linepos = 0
 
-    def setEstado(self,estado):
+    def setEstado(self, estado):
         for e in self.ESTADOS:
-            self.ESTADOS[e]=False
-        self.ESTADOS[estado]=True
+            self.ESTADOS[e] = False
+        self.ESTADOS[estado] = True
 
-    def getEstado(self,estado):
+    def getEstado(self, estado):
         return self.ESTADOS[estado]
 
-    def vLetra(self,c):
-        if c in self.LETRA:
-            return True
-        return False
-
-    def vPalavra(self,token):
-        for c in token:
-            if c not in self.LETRA:
-                return False
-        return True
-
-    def vChave(self,token):
-        if token not in self.PCHAVES:
-            return False
-        return True         
-    def vOperador(self,token):
-        if token not in self.OPERADORES:
-            return False
-        return True
-    def classifica(self,token,index):
-        if self.vPalavra(token):
-            if self.vChave(token):
-                self.tokens.append([index,'Palavra-Chave',token])
+    def getNextChar(self):
+        self.linepos += 1
+        if not self.linepos < len(self.current_line):
+            self.lineno += 1
+            if self.lineno - 1 < len(self.programa):
+                self.current_line = self.programa[self.lineno - 1]
+                print(str(self.lineno) + ": " + self.current_line)
+                self.linepos = 0
+                if self.current_line == '':
+                    return self.getNextChar()
+                return self.current_line[self.linepos]
             else:
-                self.tokens.append([index,'ID',token])
-        elif self.vOperador(token):
-            self.tokens.append([index,self.OPERADORES[token],token])
+                return 'EOF'
+        else:
+            return self.current_line[self.linepos]
 
-    def leitura(self,nomeArq):
-        file=open(nomeArq,'r')
-        programa=file.read().splitlines()
-        file.close()
-        return programa
+    def ungetNextChar(self):
+        self.linepos -= 1
 
-    def scan(self,nomeArq):
-        try:
-            programa=self.leitura(nomeArq)
-            for linha in programa:
-                index=str(programa.index(linha))
-                if self.getEstado('start'):
-                    token=''
-                for c in linha:
-                    if self.getEstado('start'):
-                        if c==' ':
-                            c=''
-                        elif self.vLetra(c):
-                            self.setEstado('inid')
-                        elif self.vOperador(c):
-                            if c=='/':
-                                self.setEstado('indiv')
-                            elif c=='*':
-                                self.setEstado('inmult')
-                            else:
-                                self.setEstado('end')
-
-                    elif self.getEstado('inid'):
-                        if self.vLetra(c):
-                            self.setEstado('inid')
-                        elif c==' ':
-                            c=''
-                            self.setEstado('end')
-                        else:
-                            self.setEstado('other')
-
-                    elif self.getEstado('indiv'):
-                        if c=='*':
-                            self.setEstado('end')
-                        elif c==' ':
-                            c=''
-                            self.setEstado('end')
-                        else:
-                            self.setEstado('other')
-
-                    elif self.getEstado('inmult'):
-                        if c=='/':
-                            self.setEstado('end')
-                        elif c==' ':
-                            c=''
-                            self.setEstado('end')
-                        else:
-                            self.setEstado('other')
-
-                    if not self.getEstado('other'):       
-                        token+=c
-
-                    if self.getEstado('end') or self.getEstado('other'):
-                        self.classifica(token,index)
-                        if self.getEstado('other'):
-                            token=c
-                            if c=='/':
-                                self.setEstado('indiv')
-                            elif c=='*':
-                                self.setEstado('inmult')
-                            elif self.vLetra(c):
-                                self.setEstado('inid')
-                        else:
-                            token=''
-                            self.setEstado('start')
-                #quebra de linha
-                # if token:
-                #     if not (self.getEstado('incomment') or self.getEstado('auxcomment')):
-                #         self.classifica(token,index)
-            if token:
-                self.classifica(token,index)  
-        except FileNotFoundError:
-            raise FileNotFoundError('arquivo não encontrado')
-
-    def saida(self):
-        for t in self.tokens:
-            print(t[0]+': '+t[1]+', '+t[2])
-
+    def getToken(self):
+        token_string = ''
+        current_token = 'other'
+        self.setEstado('start')
+        while not self.getEstado('end'):
+            save = True
+            c = self.getNextChar()
+            if self.getEstado('start'):
+                if c == ' ':
+                    save = False
+                elif util.isLetter(c):
+                    self.setEstado('inid')
+                elif util.isDigit(c):
+                    self.setEstado('innum')
+                elif c == '/':
+                    self.setEstado('maybecomment')
+                else:
+                    self.setEstado('end')
+                    if c == ';':
+                        current_token = 'pontovirgula'
+                    elif c == '+':
+                        current_token = 'add'
+                    elif c == '-':
+                        current_token = 'minus'
+                    elif c == '*':
+                        current_token = 'mult'
+                    elif c == '(':
+                        current_token = 'parentop'
+                    elif c == ')':
+                        current_token = 'parented'
+                    elif c == '{':
+                        current_token = 'chavesop'
+                    elif c == '}':
+                        current_token = 'chavesed'
+                    elif c == '[':
+                        current_token = 'colcheop'
+                    elif c == ']':
+                        current_token = 'colcheed'
+                    elif c == ',':
+                        current_token = 'virgula'
+            elif self.getEstado('inid'):
+                if not util.isLetter(c) or c == 'EOF':
+                    self.ungetNextChar()
+                    self.setEstado('end')
+                    current_token = 'ID'
+                    save = False
+            elif self.getEstado('innum'):
+                if not util.isDigit(c) or c == 'EOF':
+                    self.ungetNextChar()
+                    self.setEstado('end')
+                    current_token = 'NUM'
+                    save = False
+            elif self.getEstado('maybecomment'):
+                if c == '*':
+                    self.setEstado('comment')
+                else:
+                    self.ungetNextChar()
+                    self.setEstado('end')
+                    current_token = 'div'
+                    save = False
+            elif self.getEstado('comment'):
+                if c == '*':
+                    self.setEstado('incomment')
+            elif self.getEstado('incomment'):
+                if c == '/':
+                    self.setEstado('start')
+                    token_string = ''
+                    save = False
+                else:
+                    self.setEstado('incomment')
+            if save:
+                token_string += c
+            if token_string == 'EOF':
+                current_token = 'EOF'
+                break
+        if current_token == 'ID':
+            current_token = util.reservedLookup(token_string)
+        print('    ' + str(self.lineno) + ': ' + current_token + ', ' + token_string)
+        return current_token
