@@ -1,10 +1,8 @@
 import util
+from util import StateType
 
 
 class Scanner:
-    ESTADOS = {'start': False, 'end': False, 'other': False, 'inid': False, 'inmult': False, 'indiv': False,
-               'innum': False, 'maybecomment': False, 'comment': False, 'incomment': False}
-
     OPERADORES = {
         '+': 'add',
         '-': 'minus',
@@ -36,14 +34,6 @@ class Scanner:
         self.lineno = 0
         self.linepos = 0
 
-    def setEstado(self, estado):
-        for e in self.ESTADOS:
-            self.ESTADOS[e] = False
-        self.ESTADOS[estado] = True
-
-    def getEstado(self, estado):
-        return self.ESTADOS[estado]
-
     def getNextChar(self):
         self.linepos += 1
         if not self.linepos < len(self.current_line):
@@ -66,21 +56,21 @@ class Scanner:
     def getToken(self):
         token_string = ''
         current_token = 'other'
-        self.setEstado('start')
-        while not self.getEstado('end'):
+        state = StateType.START
+        while not state == StateType.DONE:
             save = True
             c = self.getNextChar()
-            if self.getEstado('start'):
+            if state == StateType.START:
                 if c == ' ':
                     save = False
                 elif util.isLetter(c):
-                    self.setEstado('inid')
+                    state = StateType.INID
                 elif util.isDigit(c):
-                    self.setEstado('innum')
+                    state = StateType.INNUM
                 elif c == '/':
-                    self.setEstado('maybecomment')
+                    state = StateType.MAYBE_COMMENT
                 else:
-                    self.setEstado('end')
+                    state = StateType.DONE
                     if c == ';':
                         current_token = 'pontovirgula'
                     elif c == '+':
@@ -103,36 +93,36 @@ class Scanner:
                         current_token = 'colcheed'
                     elif c == ',':
                         current_token = 'virgula'
-            elif self.getEstado('inid'):
+            elif state == StateType.INID:
                 if not util.isLetter(c) or c == 'EOF':
                     self.ungetNextChar()
-                    self.setEstado('end')
+                    state = StateType.DONE
                     current_token = 'ID'
                     save = False
-            elif self.getEstado('innum'):
+            elif state == StateType.INNUM:
                 if not util.isDigit(c) or c == 'EOF':
                     self.ungetNextChar()
-                    self.setEstado('end')
+                    state = StateType.DONE
                     current_token = 'NUM'
                     save = False
-            elif self.getEstado('maybecomment'):
+            elif state == StateType.MAYBE_COMMENT:
                 if c == '*':
-                    self.setEstado('comment')
+                    state = StateType.COMMENT
                 else:
                     self.ungetNextChar()
-                    self.setEstado('end')
+                    state = StateType.DONE
                     current_token = 'div'
                     save = False
-            elif self.getEstado('comment'):
+            elif state == StateType.COMMENT:
                 if c == '*':
-                    self.setEstado('incomment')
-            elif self.getEstado('incomment'):
+                    state = StateType.INCOMMENT
+            elif state == StateType.INCOMMENT:
                 if c == '/':
-                    self.setEstado('start')
+                    state = StateType.START
                     token_string = ''
                     save = False
                 else:
-                    self.setEstado('incomment')
+                    state = StateType.INCOMMENT
             if save:
                 token_string += c
             if token_string == 'EOF':

@@ -15,6 +15,19 @@ class TokenType(Enum):
     MINUS = 4
 
 
+class StateType(Enum):
+    START = 1
+    DONE = 2
+    INID = 3
+    INMULT = 4
+    INDIV = 5
+    INNUM = 6
+    MAYBE_COMMENT = 7
+    COMMENT = 8
+    INCOMMENT = 9
+    OTHER = 10
+
+
 def readFile(fileName):
     try:
         file = open(fileName, 'r')
