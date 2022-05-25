@@ -45,6 +45,10 @@ class StateType(Enum):
     MAYBE_COMMENT = 7
     COMMENT = 8
     INCOMMENT = 9
+    MAYBE_GREATER = 10
+    MAYBE_LESS = 11
+    MAYBE_EQ = 12
+    DIFF = 13
 
 
 DIGITOS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']

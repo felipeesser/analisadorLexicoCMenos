@@ -37,40 +37,69 @@ class Scanner:
             save = True
             c = self.getNextChar()
             if state == StateType.START:
-                if c == ' ' or c == '\n' or c == '\t':
+                if c in [' ', '\n', '\t']:
                     save = False
+                elif c == '>':
+                    state = StateType.MAYBE_GREATER
+                elif c == '<':
+                    state = StateType.MAYBE_LESS
+                elif c == '=':
+                    state = StateType.MAYBE_EQ
                 elif util.isLetter(c):
                     state = StateType.INID
                 elif util.isDigit(c):
                     state = StateType.INNUM
+                elif c == '!':
+                    state = StateType.DIFF
                 elif c == '/':
                     state = StateType.MAYBE_COMMENT
                 else:
                     state = StateType.DONE
-                    if c == ';':
-                        current_token = TokenType.PONTO_VIRGULA
-                    elif c == '+':
+                    if c == '+':
                         current_token = TokenType.MAIS
                     elif c == '-':
                         current_token = TokenType.MENOS
                     elif c == '*':
                         current_token = TokenType.MULT
+                    elif c == ';':
+                        current_token = TokenType.PONTO_VIRGULA
+                    elif c == ',':
+                        current_token = TokenType.VIRGULA
                     elif c == '(':
                         current_token = TokenType.PARENT_OP
                     elif c == ')':
                         current_token = TokenType.PARENT_ED
-                    elif c == '{':
-                        current_token = TokenType.CHAVES_OP
-                    elif c == '}':
-                        current_token = TokenType.CHAVES_ED
                     elif c == '[':
                         current_token = TokenType.COLCH_OP
                     elif c == ']':
                         current_token = TokenType.COLCH_ED
-                    elif c == ',':
-                        current_token = TokenType.VIRGULA
+                    elif c == '{':
+                        current_token = TokenType.CHAVES_OP
+                    elif c == '}':
+                        current_token = TokenType.CHAVES_ED
                     elif c == 'EOF':
                         current_token = TokenType.EOF
+            elif state == StateType.MAYBE_GREATER:
+                state = StateType.DONE
+                if c == '=':
+                    current_token = TokenType.GREAT_EQUAL
+                else:
+                    current_token = TokenType.GREAT
+                    self.ungetNextChar()
+            elif state == StateType.MAYBE_LESS:
+                state = StateType.DONE
+                if c == '=':
+                    current_token = TokenType.LESS_EQUAL
+                else:
+                    current_token = TokenType.LESS
+                    self.ungetNextChar()
+            elif state == StateType.MAYBE_EQ:
+                state = StateType.DONE
+                if c == '=':
+                    current_token = TokenType.EQUAL
+                else:
+                    current_token = TokenType.ATTR
+                    self.ungetNextChar()
             elif state == StateType.INID:
                 if not util.isLetter(c):
                     self.ungetNextChar()
