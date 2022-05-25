@@ -1,119 +1,156 @@
-from lib2to3.pgen2 import token
+import util
+from util import StateType, TokenType
 
 
-class Scanner():
-    ESTADOS={'start':False,'end':False,'other':False,'inid':False,'incomment':False}
+class Scanner:
+    def __init__(self, fileName):
+        self.program = util.readFile(fileName)
+        self.current_line = ''
+        self.lineno = -1
+        self.linepos = -1
 
-    PCHAVES=['else','if','int','return','void','while']
-
-    LETRA=['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z',
-    'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z']
-
-    DIGITO=['0','1','2','3','4','5','6','7','8','9']
-
-    OPERADORES={
-        '+': '',
-        '-': '',
-        '*': '',
-        '/': '',
-        '<': '',
-        '<=' : '',
-        '>': '',
-        '>=' : '',
-        '==' : '',
-        '!=' : '',
-        '=': '',
-        ';': '',
-        ',': '',
-        '(': '',
-        ')': '',
-        '[': '',
-        ']': '',
-        '{': '',        
-        '}': '',
-        '/*': '', 
-        '*/': ''
-    }
-    
-    def __init__(self):
-        self.tokens = []
-        self.setEstado('start')
-
-    def setEstado(self,estado):
-        for e in self.ESTADOS:
-            self.ESTADOS[e]=False
-        self.ESTADOS[estado]=True
-
-    def getEstado(self,estado):
-        return self.ESTADOS[estado]
-
-    def vLetra(self,c):
-        if c in self.LETRA:
-            return True
-        return False
-
-    def vPalavra(self,token):
-        for c in token:
-            if c not in self.LETRA:
-                return False
-        return True
-
-    def vChave(self,token):
-        if token not in self.PCHAVES:
-            return False
-        return True         
-
-    def classifica(self,token,index):
-        if self.vPalavra(token):
-            if self.vChave(token):
-                self.tokens.append([index,'Palavra-Chave',token])
-            else:
-                self.tokens.append([index,'ID',token])
-
-    def leitura(self,nomeArq):
-        file=open(nomeArq,'r')
-        programa=file.read().splitlines()
-        file.close()
-        return programa
-
-    def scan(self,nomeArq):
+    def __getNextLine(self):
+        self.lineno += 1
+        self.linepos = -1
+        self.current_line = self.program[self.lineno]
+        print(str(self.lineno + 1) + ": " + self.current_line)
+        self.current_line += '\n'
+        
+    def getNextChar(self):
         try:
-            programa=self.leitura(nomeArq)
-            for linha in programa:
-                index=str(programa.index(linha))
-                token=''
-                for c in linha:
-                    if self.getEstado('start'):
-                        if self.vLetra(c):
-                            self.setEstado('inid')
+            self.linepos += 1
+            return self.current_line[self.linepos]
+        except: #Line completely read
+            try:
+                self.__getNextLine()
+            except: #Program completely read
+                return 'EOF'
+            return self.getNextChar()
 
-                    elif self.getEstado('inid'):
-                        if self.vLetra(c):
-                            self.setEstado('inid')
-                        elif c==' ':
-                            c=''
-                            self.setEstado('end')
-                        else:
-                            self.setEstado('other')
+    def ungetNextChar(self):
+        self.linepos -= 1
 
-                    if not self.getEstado('other'):       
-                        token+=c
-
-                    if self.getEstado('end') or self.getEstado('other'):
-                        self.classifica(token,index)
-                        if self.getEstado('other'):
-                            pass    
-                        token=''
-                        self.setEstado('start')
-                #quebra de linha
-                if token:
-                    self.classifica(token,index)
-                    if self.getEstado('other'):
-                        pass    
-        except FileNotFoundError:
-            raise FileNotFoundError('arquivo não encontrado')
-
-    def saida(self):
-        for t in self.tokens:
-            print(t[0]+': '+t[1]+', '+t[2])
-
+    def getToken(self):
+        token_string = ''
+        current_token = TokenType.ERROR
+        state = StateType.START
+        while not state == StateType.DONE:
+            save = True
+            c = self.getNextChar()
+            if state == StateType.START:
+                if c in [' ', '\n', '\t']:
+                    save = False
+                elif c == '>':
+                    state = StateType.MAYBE_GREATER
+                elif c == '<':
+                    state = StateType.MAYBE_LESS
+                elif c == '=':
+                    state = StateType.MAYBE_EQ
+                elif util.isLetter(c):
+                    state = StateType.INID
+                elif util.isDigit(c):
+                    state = StateType.INNUM
+                elif c == '!':
+                    state = StateType.DIFF
+                elif c == '/':
+                    state = StateType.MAYBE_COMMENT
+                else:
+                    state = StateType.DONE
+                    if c == '+':
+                        current_token = TokenType.MAIS
+                    elif c == '-':
+                        current_token = TokenType.MENOS
+                    elif c == '*':
+                        current_token = TokenType.MULT
+                    elif c == ';':
+                        current_token = TokenType.PONTO_VIRGULA
+                    elif c == ',':
+                        current_token = TokenType.VIRGULA
+                    elif c == '(':
+                        current_token = TokenType.PARENT_OP
+                    elif c == ')':
+                        current_token = TokenType.PARENT_ED
+                    elif c == '[':
+                        current_token = TokenType.COLCH_OP
+                    elif c == ']':
+                        current_token = TokenType.COLCH_ED
+                    elif c == '{':
+                        current_token = TokenType.CHAVES_OP
+                    elif c == '}':
+                        current_token = TokenType.CHAVES_ED
+                    elif c == 'EOF':
+                        current_token = TokenType.EOF
+            elif state == StateType.MAYBE_GREATER:
+                state = StateType.DONE
+                if c == '=':
+                    current_token = TokenType.GREAT_EQUAL
+                else:
+                    current_token = TokenType.GREAT
+                    self.ungetNextChar()
+                    save = False
+            elif state == StateType.MAYBE_LESS:
+                state = StateType.DONE
+                if c == '=':
+                    current_token = TokenType.LESS_EQUAL
+                else:
+                    current_token = TokenType.LESS
+                    self.ungetNextChar()
+                    save = False
+            elif state == StateType.MAYBE_EQ:
+                state = StateType.DONE
+                if c == '=':
+                    current_token = TokenType.EQUAL
+                else:
+                    current_token = TokenType.ATTR
+                    self.ungetNextChar()
+                    save = False
+            elif state == StateType.INID:
+                if not util.isLetter(c):
+                    self.ungetNextChar()
+                    state = StateType.DONE
+                    current_token = TokenType.ID
+                    save = False
+            elif state == StateType.INNUM:
+                if not util.isDigit(c):
+                    self.ungetNextChar()
+                    state = StateType.DONE
+                    current_token = TokenType.NUM
+                    save = False
+            elif state == StateType.DIFF:
+                state = StateType.DONE
+                if c == '=':
+                    current_token = TokenType.DIF
+                else:
+                    current_token = TokenType.ERROR
+                    self.ungetNextChar()
+                    save = False
+            elif state == StateType.MAYBE_COMMENT:
+                if c == '*':
+                    state = StateType.COMMENT
+                else:
+                    self.ungetNextChar()
+                    state = StateType.DONE
+                    current_token = TokenType.DIV
+                    save = False
+            elif state == StateType.COMMENT:
+                if c == '*':
+                    state = StateType.INCOMMENT
+                elif c == 'EOF':
+                    state = StateType.DONE
+                    current_token = TokenType.EOF
+            elif state == StateType.INCOMMENT:
+                if c == '/':
+                    state = StateType.START
+                    token_string = ''
+                    save = False
+                elif c == 'EOF':
+                    state = StateType.DONE
+                    current_token = TokenType.EOF
+                else:
+                    state = StateType.COMMENT
+            if save:
+                token_string += c
+        if current_token == TokenType.ID:
+            current_token = util.reservedLookup(token_string)
+        util.printToken(current_token, token_string, self.lineno+1)
+        return current_token
