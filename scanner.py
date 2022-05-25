@@ -14,6 +14,7 @@ class Scanner:
         self.linepos = -1
         self.current_line = self.program[self.lineno]
         print(str(self.lineno + 1) + ": " + self.current_line)
+        self.current_line += '\n'
         
     def getNextChar(self):
         try:
