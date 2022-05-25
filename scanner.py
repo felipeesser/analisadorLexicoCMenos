@@ -86,6 +86,7 @@ class Scanner:
                 else:
                     current_token = TokenType.GREAT
                     self.ungetNextChar()
+                    save = False
             elif state == StateType.MAYBE_LESS:
                 state = StateType.DONE
                 if c == '=':
@@ -93,6 +94,7 @@ class Scanner:
                 else:
                     current_token = TokenType.LESS
                     self.ungetNextChar()
+                    save = False
             elif state == StateType.MAYBE_EQ:
                 state = StateType.DONE
                 if c == '=':
@@ -100,6 +102,7 @@ class Scanner:
                 else:
                     current_token = TokenType.ATTR
                     self.ungetNextChar()
+                    save = False
             elif state == StateType.INID:
                 if not util.isLetter(c):
                     self.ungetNextChar()
@@ -111,6 +114,14 @@ class Scanner:
                     self.ungetNextChar()
                     state = StateType.DONE
                     current_token = TokenType.NUM
+                    save = False
+            elif state == StateType.DIFF:
+                state = StateType.DONE
+                if c == '=':
+                    current_token = TokenType.DIF
+                else:
+                    current_token = TokenType.ERROR
+                    self.ungetNextChar()
                     save = False
             elif state == StateType.MAYBE_COMMENT:
                 if c == '*':
