@@ -31,7 +31,7 @@ class TokenType(Enum):
     RETURN = 27
     VOID = 28
     WHILE = 29
-    OTHER = 30  # Remover quando todas estiverem implementadas
+    ERROR = 30
 
 
 # Enum para os tipos de estado do scanner
@@ -45,6 +45,10 @@ class StateType(Enum):
     MAYBE_COMMENT = 7
     COMMENT = 8
     INCOMMENT = 9
+    MAYBE_GREATER = 10
+    MAYBE_LESS = 11
+    MAYBE_EQ = 12
+    DIFF = 13
 
 
 DIGITOS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
@@ -66,23 +70,17 @@ def readFile(fileName):
         raise FileNotFoundError('Arquivo não encontrado')
 
 
-def isDigit(c):
-    if c in DIGITOS:
-        return True
-    return False
+def isDigit(c): return c in DIGITOS
 
 
-def isLetter(c):
-    if c in LETRAS:
-        return True
-    return False
+def isLetter(c): return c in LETRAS
 
 
 def reservedLookup(tokenString):
-    for palavraChave in PALAVRAS_RESERVADAS:
-        if tokenString == palavraChave:
-            return PALAVRAS_RESERVADAS[tokenString]
-    return TokenType.ID
+    try:
+        return PALAVRAS_RESERVADAS[tokenString]
+    except:
+        return TokenType.ID
 
 
 def printToken(tokenType, tokenString, lineno):
