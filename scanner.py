@@ -37,7 +37,7 @@ class Scanner:
             save = True
             c = self.getNextChar()
             if state == StateType.START:
-                if c == ' ':
+                if c == ' ' or c == '\n' or c == '\t':
                     save = False
                 elif util.isLetter(c):
                     state = StateType.INID
