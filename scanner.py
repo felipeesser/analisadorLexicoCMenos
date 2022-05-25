@@ -6,31 +6,32 @@ class Scanner:
     def __init__(self, fileName):
         self.program = util.readFile(fileName)
         self.current_line = ''
-        self.lineno = 0
-        self.linepos = 0
+        self.lineno = -1
+        self.linepos = -1
 
+    def __getNextLine(self):
+        self.lineno += 1
+        self.linepos = -1
+        self.current_line = self.program[self.lineno]
+        print(str(self.lineno + 1) + ": " + self.current_line)
+        
     def getNextChar(self):
-        self.linepos += 1
-        if not self.linepos < len(self.current_line):
-            self.lineno += 1
-            if self.lineno - 1 < len(self.program):
-                self.current_line = self.program[self.lineno - 1]
-                print(str(self.lineno) + ": " + self.current_line)
-                self.linepos = 0
-                if self.current_line == '':
-                    return self.getNextChar()
-                return self.current_line[self.linepos]
-            else:
-                return 'EOF'
-        else:
+        try:
+            self.linepos += 1
             return self.current_line[self.linepos]
+        except: #Line completely read
+            try:
+                self.__getNextLine()
+            except: #Program completely read
+                return 'EOF'
+            return self.getNextChar()
 
     def ungetNextChar(self):
         self.linepos -= 1
 
     def getToken(self):
         token_string = ''
-        current_token = TokenType.OTHER
+        current_token = TokenType.ERROR
         state = StateType.START
         while not state == StateType.DONE:
             save = True
@@ -110,5 +111,5 @@ class Scanner:
                 token_string += c
         if current_token == TokenType.ID:
             current_token = util.reservedLookup(token_string)
-        util.printToken(current_token, token_string, self.lineno)
+        util.printToken(current_token, token_string, self.lineno+1)
         return current_token
