@@ -153,4 +153,4 @@ class Scanner:
         if current_token == TokenType.ID:
             current_token = util.reservedLookup(token_string)
         util.printToken(current_token, token_string, self.lineno+1)
-        return current_token
+        return [current_token,token_string]
