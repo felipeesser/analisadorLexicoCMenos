@@ -11,7 +11,7 @@ def main():
         # while token != TokenType.EOF:
         #     token = scan.getToken()
         parse=Parser(sys.argv[1])
-        print(parse.exp())
+        print(parse.expression_())
     else:
         print('Não foi passado arquivo de entrada')
 
