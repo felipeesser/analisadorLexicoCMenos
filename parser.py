@@ -18,6 +18,64 @@ class Parser:
             self.token=self.scanner.getToken()
         else:
             self.error()
+    def program(self):
+        if(self.token[0]==TokenType.INT or self.token[0]==TokenType.VOID):
+            self.declaration_list()
+        else:
+            self.error()
+    def declaration_list(self):
+        if(self.token[0]==TokenType.INT or self.token[0]==TokenType.VOID):
+            self.declaration()
+            self.declaration_list_()
+        else:
+            self.error()
+    def declaration(self):
+        if(self.token[0]==TokenType.INT or self.token[0]==TokenType.VOID):
+            self.type_specifier()
+            self.match(TokenType.ID)
+            if(self.token[0]==TokenType.PARENT_OP):#fun_declaration
+                self.match(TokenType.PARENT_OP)
+                self.params()
+                self.match(TokenType.PARENT_ED)
+                self.compound_stmt()
+            else:
+                self.var_declaration_()
+        else:
+            self.error()
+    def params(self):
+        if(self.token[0]==TokenType.INT or self.token[0]==TokenType.VOID):
+            if(self.token[0]==TokenType.INT):
+                self.param_list()
+            else:
+                self.match(TokenType.VOID)
+                if(self.token[0]==TokenType.ID):#param_list
+                    self.match(TokenType.ID)
+                    self.colche()
+                    self.param_list_()
+        else:
+            self.error()
+    def param_list(self):
+        if(self.token[0]==TokenType.INT or self.token[0]==TokenType.VOID):
+            self.param()
+            self.param_list_()
+        else:
+            self.error()
+    def param_list_(self):
+        if(self.token[0]==TokenType.VIRGULA):
+            self.match(TokenType.VIRGULA)
+            self.param()
+            self.param_list_()
+    def param(self):
+        if(self.token[0]==TokenType.INT or self.token[0]==TokenType.VOID):
+            self.type_specifier()
+            self.match(TokenType.ID)
+            self.colche()
+        else:
+            self.error()
+    def colche(self):
+        if(self.token[0]==TokenType.COLCH_OP):
+            self.match(TokenType.COLCH_OP)
+            self.match(TokenType.COLCH_ED)
     def addop(self):
         if(self.token[0]==TokenType.MAIS):
             self.match(TokenType.MAIS)
@@ -80,9 +138,24 @@ class Parser:
             self.relop_()
         else:
             self.error()
+    def var(self):
+        if(self.token[0]==TokenType.ID):
+            self.match(TokenType.ID)
+            self.var_()
+        else:
+            self.error()
+    def var_(self):
+        if(self.token[0]==TokenType.COLCH_OP):
+            self.match(TokenType.COLCH_OP)
+            self.expression()
+            self.match(TokenType.COLCH_ED)
     def expression(self):
         if(self.token[0]==TokenType.NUM or self.token[0]==TokenType.PARENT_OP):
             self.simple_expression()
+        elif(self.token[0]==TokenType.ID):
+            self.var()
+            self.match(TokenType.ATTR)
+            self.expression()
         else:
             self.error()
     def expression_(self):
