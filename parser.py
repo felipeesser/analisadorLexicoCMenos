@@ -1,4 +1,3 @@
-from ast import If
 from scanner import Scanner
 from util import TokenType
 
@@ -29,6 +28,10 @@ class Parser:
             self.declaration_list_()
         else:
             self.error()
+    def declaration_list_(self):
+        if(self.token[0]==TokenType.INT or self.token[0]==TokenType.VOID):
+            self.declaration()
+            self.declaration_list_()
     def declaration(self):
         if(self.token[0]==TokenType.INT or self.token[0]==TokenType.VOID):
             self.type_specifier()
@@ -102,7 +105,7 @@ class Parser:
         else:
             self.error() 
     def term(self):
-        if(self.token[0]==TokenType.NUM or self.token[0]==TokenType.PARENT_OP):
+        if(self.token[0]==TokenType.ID or self.token[0]==TokenType.NUM or self.token[0]==TokenType.PARENT_OP):
             self.factor()
             self.term_()
         else:
@@ -133,7 +136,7 @@ class Parser:
             self.relop()
             self.additive_expression()
     def simple_expression(self):
-        if(self.token[0]==TokenType.NUM or self.token[0]==TokenType.PARENT_OP):
+        if(self.token[0]==TokenType.ID or self.token[0]==TokenType.NUM or self.token[0]==TokenType.PARENT_OP):
             self.additive_expression()
             self.relop_()
         else:
@@ -150,18 +153,33 @@ class Parser:
             self.expression()
             self.match(TokenType.COLCH_ED)
     def expression(self):
-        if(self.token[0]==TokenType.NUM or self.token[0]==TokenType.PARENT_OP):
+        if(self.token[0]==TokenType.NUM or self.token[0]==TokenType.PARENT_OP):#simple expression sem id
             self.simple_expression()
         elif(self.token[0]==TokenType.ID):
-            self.var()
-            self.match(TokenType.ATTR)
-            self.expression()
+            self.match(TokenType.ID)
+            if(self.token[0]==TokenType.COLCH_OP):#var com id lido
+                self.var_()
+                self.match(TokenType.ATTR)
+                self.expression()
+            elif(self.token[0]==TokenType.ATTR):#var com id lido
+                self.match(TokenType.ATTR)
+                self.expression()
+            else:#simple expression com ID lido
+                if(self.token[0]==TokenType.PARENT_OP):#factor call com id já lido
+                    self.match(TokenType.PARENT_OP)
+                    self.args()
+                    self.match(TokenType.PARENT_ED)
+                else:#factor var com id já lido
+                    self.var_()
+                self.term_()
+                self.additive_expression_()
+                self.relop_()
         else:
             self.error()
     def expression_(self):
         if(self.token[0]==TokenType.PONTO_VIRGULA):
             self.match(TokenType.PONTO_VIRGULA)
-        elif(self.token[0]==TokenType.NUM or self.token[0]==TokenType.PARENT_OP):
+        elif(self.token[0]==TokenType.ID or self.token[0]==TokenType.NUM or self.token[0]==TokenType.PARENT_OP):
             self.expression()
             self.match(TokenType.PONTO_VIRGULA)
         else:
@@ -198,12 +216,12 @@ class Parser:
     def statement_list(self):
         if(self.token[0]==TokenType.WHILE or self.token[0]==TokenType.RETURN or self.token[0]==TokenType.IF or 
         self.token[0]==TokenType.PONTO_VIRGULA or self.token[0]==TokenType.NUM or self.token[0]==TokenType.PARENT_OP or 
-        self.token[0]==TokenType.CHAVES_OP):
+        self.token[0]==TokenType.CHAVES_OP or self.token[0]==TokenType.ID):
             self.statement_list_()
     def statement_list_(self):
         if(self.token[0]==TokenType.WHILE or self.token[0]==TokenType.RETURN or self.token[0]==TokenType.IF or 
         self.token[0]==TokenType.PONTO_VIRGULA or self.token[0]==TokenType.NUM or self.token[0]==TokenType.PARENT_OP or 
-        self.token[0]==TokenType.CHAVES_OP):
+        self.token[0]==TokenType.CHAVES_OP or self.token[0]==TokenType.ID):
             self.statement()
             self.statement_list_()
     def local_declarations(self):
@@ -247,7 +265,7 @@ class Parser:
         else:
             self.error()
     def expression_stmt(self):
-        if(self.token[0]==TokenType.PONTO_VIRGULA or self.token[0]==TokenType.NUM or self.token[0]==TokenType.PARENT_OP):
+        if(self.token[0]==TokenType.PONTO_VIRGULA or self.token[0]==TokenType.NUM or self.token[0]==TokenType.PARENT_OP or self.token[0]==TokenType.ID):
             if(self.token[0]==TokenType.PONTO_VIRGULA):
                 self.match(TokenType.PONTO_VIRGULA)
             else:
@@ -258,7 +276,7 @@ class Parser:
     def statement(self):
         if(self.token[0]==TokenType.WHILE or self.token[0]==TokenType.RETURN or self.token[0]==TokenType.IF or 
         self.token[0]==TokenType.PONTO_VIRGULA or self.token[0]==TokenType.NUM or self.token[0]==TokenType.PARENT_OP or 
-        self.token[0]==TokenType.CHAVES_OP):
+        self.token[0]==TokenType.CHAVES_OP or self.token[0]==TokenType.ID):
             if(self.token[0]==TokenType.RETURN):
                 self.return_stmt()
             elif(self.token[0]==TokenType.WHILE):
@@ -274,20 +292,18 @@ class Parser:
     def factor(self):
         if(self.token[0]==TokenType.PARENT_OP):
             self.match(TokenType.PARENT_OP)
-            self.additive_expression()
+            self.expression()
             self.match(TokenType.PARENT_ED)
         elif(self.token[0]==TokenType.NUM):
             self.match(TokenType.NUM)
         elif(self.token[0]==TokenType.ID):
             self.match(TokenType.ID)
-            if(self.token[0]==TokenType.PARENT_OP):#call
+            if(self.token[0]==TokenType.PARENT_OP):#call com id lido
                 self.match(TokenType.PARENT_OP)
                 self.args()
                 self.match(TokenType.PARENT_ED)
-            elif(self.token[0]==TokenType.COLCH_OP):#var
-                self.match(TokenType.COLCH_OP)
-                self.expression()
-                self.match(TokenType.COLCH_ED)
+            else:#var com id lido
+                self.var_()
         else:
             self.error()
     def args(self):
