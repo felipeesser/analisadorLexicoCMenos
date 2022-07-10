@@ -44,7 +44,7 @@ class Parser:
         self.match(TokenType.ID)
         t.children.append(id_node)
         if self.token[0] == TokenType.PARENT_OP:  # fun_declaration
-            self.identifiers_table.append([])
+            self.identifiers_table.append(self.identifiers_table[-1].copy())
             self.match(TokenType.PARENT_OP)
             p = self.params()
             params = []
@@ -63,7 +63,7 @@ class Parser:
                 self.match(TokenType.COLCH_ED)
             self.match(TokenType.PONTO_VIRGULA)
             t.type = 'VAR-DECLARATION'
-            self.identifiers_table[-1].append(t.attr)
+            self.identifiers_table[-1].append(id_node.attr)
         return t
 
     def type_specifier(self):
