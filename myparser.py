@@ -6,7 +6,7 @@ class Parser:
     def __init__(self, scanner):
         self.scanner = scanner
         self.token = None
-        self.prevToken = None
+        self.prevToken = [None, None, None]
 
     def match(self, expectedToken):
         if self.token[0] == expectedToken:
@@ -204,6 +204,7 @@ class Parser:
         while self.token[0] == TokenType.ID:
             q = TreeNode()
             q.attr = self.token[1]
+            prev_token = self.token
             self.match(TokenType.ID)
             if self.token[0] == TokenType.COLCH_OP:
                 self.match(TokenType.COLCH_OP)
@@ -214,7 +215,7 @@ class Parser:
                 if self.token[0] == TokenType.ATTR:
                     self.match(TokenType.ATTR)
                 else:
-                    self.prevToken = TokenType.ID
+                    self.prevToken = prev_token
                     break
             q.type = 'ASSIGN'
             p.children.append(q)
@@ -232,72 +233,110 @@ class Parser:
     def simple_expression(self):
         t = TreeNode()
         t.type = 'SIMPLE-EXPRESSION'
-        self.additive_expression()
+        t.children.append(self.additive_expression())
         if (self.token[0] == TokenType.GREAT or self.token[0] == TokenType.GREAT_EQUAL or
                 self.token[0] == TokenType.EQUAL or self.token[0] == TokenType.LESS or
                 self.token[0] == TokenType.LESS_EQUAL or self.token[0] == TokenType.DIF):
-            self.relop()
-            self.additive_expression()
+            t.children.append(self.relop())
+            t.children.append(self.additive_expression())
         return t
 
     def relop(self):
+        t = TreeNode()
+        t.type = 'RELOP'
         if self.token[0] == TokenType.GREAT:
+            t.attr = '>'
             self.match(TokenType.GREAT)
         elif self.token[0] == TokenType.GREAT_EQUAL:
+            t.attr = '>='
             self.match(TokenType.GREAT_EQUAL)
         elif self.token[0] == TokenType.EQUAL:
+            t.attr = '=='
             self.match(TokenType.EQUAL)
         elif self.token[0] == TokenType.LESS:
+            t.attr = '<'
             self.match(TokenType.LESS)
         elif self.token[0] == TokenType.LESS_EQUAL:
+            t.attr = '<='
             self.match(TokenType.LESS_EQUAL)
         elif self.token[0] == TokenType.DIF:
+            t.attr = '!='
             self.match(TokenType.DIF)
+        return t
 
     def additive_expression(self):
-        self.term()
+        t = TreeNode()
+        t.type = 'ADDITIVE-EXPRESSION'
+        t.children.append(self.term())
         if self.token[0] == TokenType.MAIS or self.token[0] == TokenType.MENOS:
-            self.addop()
-            self.term()
+            t.children.append(self.addop())
+            t.children.append(self.term())
+        return t
 
     def addop(self):
+        t = TreeNode()
+        t.type = 'ADDOP'
         if self.token[0] == TokenType.MAIS:
+            t.attr = '+'
             self.match(TokenType.MAIS)
         elif self.token[0] == TokenType.MENOS:
+            t.attr = '-'
             self.match(TokenType.MENOS)
+        return t
 
     def term(self):
-        self.factor()
+        t = TreeNode()
+        t.type = 'TERM'
+        t.children.append(self.factor())
         while self.token[0] == TokenType.MULT or self.token[0] == TokenType.DIV:
-            self.mulop()
-            self.factor()
+            t.children.append(self.mulop())
+            t.children.append(self.factor())
+        return t
 
     def mulop(self):
+        t = TreeNode()
+        t.type = 'MULOP'
         if self.token[0] == TokenType.MULT:
+            t.attr = '*'
             self.match(TokenType.MULT)
         elif self.token[0] == TokenType.DIV:
+            t.attr = '/'
             self.match(TokenType.DIV)
+        return t
 
     def factor(self):
-        if self.token[0] == TokenType.ID or self.prevToken == TokenType.ID:
-            if not self.prevToken == TokenType.ID:
+        t = TreeNode()
+        t.type = 'FACTOR'
+        if self.token[0] == TokenType.ID or self.prevToken[0] == TokenType.ID:
+            p = TreeNode()
+            p.attr = self.prevToken[1]
+            if not self.prevToken[0] == TokenType.ID:
+                p.attr = self.token[1]
                 self.match(TokenType.ID)
-            self.prevToken = None
+            self.prevToken = [None, None, None]
             if self.token[0] == TokenType.PARENT_OP:  # call
+                p.type = 'CALL'
                 self.match(TokenType.PARENT_OP)
                 self.args()
                 self.match(TokenType.PARENT_ED)
             else:  # var
+                p.type = 'VAR'
                 if self.token[0] == TokenType.COLCH_OP:
                     self.match(TokenType.COLCH_OP)
-                    self.expression()
+                    p.children.append(self.expression())
                     self.match(TokenType.COLCH_ED)
+            t.children.append(p)
         elif self.token[0] == TokenType.PARENT_OP:
             self.match(TokenType.PARENT_OP)
-            self.expression()
+            t.children.append(self.expression())
             self.match(TokenType.PARENT_ED)
         elif self.token[0] == TokenType.NUM:
+            p = TreeNode()
+            p.type = 'NUM'
+            p.attr = self.token[1]
+            t.children.append(p)
             self.match(TokenType.NUM)
+        return t
 
     def args(self):
         self.expression()
