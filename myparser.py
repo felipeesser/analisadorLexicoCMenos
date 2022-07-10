@@ -115,9 +115,11 @@ class Parser:
         t = TreeNode()
         t.type = 'COMPOUND-STMT'
         self.match(TokenType.CHAVES_OP)
+        self.identifiers_table.append(self.identifiers_table[-1].copy())
         t.children += self.local_declarations()
         t.children += self.statement_list()
         self.match(TokenType.CHAVES_ED)
+        self.identifiers_table.pop()
         return t
 
     def local_declarations(self):
