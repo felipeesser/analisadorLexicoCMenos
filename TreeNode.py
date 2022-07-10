@@ -6,3 +6,6 @@ class TreeNode:
         self.kind = None
         self.attr = None
         self.type = None
+
+    def __str__(self):
+        return f'{self.type}'

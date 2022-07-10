@@ -7,6 +7,7 @@ class Parser:
         self.scanner = scanner
         self.token = None
         self.prevToken = [None, None, None]
+        self.identifiers_table = [[]]
 
     def match(self, expectedToken):
         if self.token[0] == expectedToken:
@@ -43,11 +44,18 @@ class Parser:
         self.match(TokenType.ID)
         t.children.append(id_node)
         if self.token[0] == TokenType.PARENT_OP:  # fun_declaration
+            self.identifiers_table.append([])
             self.match(TokenType.PARENT_OP)
-            t.children.append(self.params())
+            p = self.params()
+            params = []
+            for param in p.children:
+                params.append(param.children[1].attr)
             self.match(TokenType.PARENT_ED)
+            t.children.append(p)
+            self.identifiers_table[-1] += params
             t.children.append(self.compound_stmt())
             t.type = 'FUN-DECLARATION'
+            self.identifiers_table.pop()
         else:  # var_declaration
             if self.token[0] == TokenType.COLCH_OP:
                 self.match(TokenType.COLCH_OP)
@@ -55,6 +63,7 @@ class Parser:
                 self.match(TokenType.COLCH_ED)
             self.match(TokenType.PONTO_VIRGULA)
             t.type = 'VAR-DECLARATION'
+            self.identifiers_table[-1].append(t.attr)
         return t
 
     def type_specifier(self):
@@ -74,21 +83,18 @@ class Parser:
         if self.token[0] == TokenType.VOID:
             self.match(TokenType.VOID)
         else:
-            t.children.append(self.param_list())
+            t.children += self.param_list()
         return t
 
     def param_list(self):
         params = []
         t = self.param()
-        p = t
         params.append(t)
         while self.token[0] == TokenType.VIRGULA:
             self.match(TokenType.VIRGULA)
             q = self.param()
-            p.sibling = q
-            p = q
             params.append(q)
-        return t
+        return params
 
     def param(self):
         t = TreeNode()
@@ -126,6 +132,7 @@ class Parser:
             id_node.attr = self.token[1]
             self.match(TokenType.ID)
             t.children.append(id_node)
+            self.identifiers_table[-1].append(id_node.attr)
             if self.token[0] == TokenType.COLCH_OP:
                 self.match(TokenType.COLCH_OP)
                 self.match(TokenType.NUM)
@@ -205,10 +212,11 @@ class Parser:
             q = TreeNode()
             q.attr = self.token[1]
             prev_token = self.token
+            id_line = self.token[2]
             self.match(TokenType.ID)
             if self.token[0] == TokenType.COLCH_OP:
                 self.match(TokenType.COLCH_OP)
-                self.expression()
+                q.children.append(self.expression())
                 self.match(TokenType.COLCH_ED)
                 self.match(TokenType.ATTR)
             else:
@@ -220,6 +228,10 @@ class Parser:
             q.type = 'ASSIGN'
             p.children.append(q)
             p = q
+            available_vars = self.identifiers_table[-1]
+            if p.attr not in available_vars:
+                print(f'Erro na linha {id_line}: Variável {p.attr} sendo utilizada antes de sua declaração')
+                exit(1)
         p.children.append(self.simple_expression())
         return t
 
@@ -302,9 +314,11 @@ class Parser:
         t.type = 'FACTOR'
         if self.token[0] == TokenType.ID or self.prevToken[0] == TokenType.ID:
             p = TreeNode()
+            id_line = self.prevToken[2]
             p.attr = self.prevToken[1]
             if not self.prevToken[0] == TokenType.ID:
                 p.attr = self.token[1]
+                id_line = self.token[2]
                 self.match(TokenType.ID)
             self.prevToken = [None, None, None]
             if self.token[0] == TokenType.PARENT_OP:  # call
@@ -318,6 +332,10 @@ class Parser:
                     self.match(TokenType.COLCH_OP)
                     p.children.append(self.expression())
                     self.match(TokenType.COLCH_ED)
+                available_vars = self.identifiers_table[-1]
+                if p.attr not in available_vars:
+                    print(f'Erro na linha {id_line}: Variável {p.attr} sendo utilizada antes de sua declaração')
+                    exit(1)
             t.children.append(p)
         elif self.token[0] == TokenType.PARENT_OP:
             self.match(TokenType.PARENT_OP)
