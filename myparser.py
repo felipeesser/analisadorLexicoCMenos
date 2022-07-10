@@ -17,11 +17,7 @@ class Parser:
 
     # TODO: revisar
     def error(self, expectedToken):
-        if self.token[0] == TokenType.EOF:
-            exit(1)
-        print('Error!')
-        print('Esperando token ' + expectedToken.name + ' no lugar de ' + self.token[1])
-        print(self.token[0].name, self.token[1], self.token[2])
+        print(f'Erro na linha {self.token[2]} : Esperando token {expectedToken.name} no lugar de {self.token[1]}')
         exit(1)
 
     def parse(self):
