@@ -220,7 +220,8 @@ class Parser:
                 self.match(TokenType.COLCH_OP)
                 q.children.append(self.expression())
                 self.match(TokenType.COLCH_ED)
-                self.match(TokenType.ATTR)
+                if self.token[0] == TokenType.ATTR:
+                    self.match(TokenType.ATTR)
             else:
                 if self.token[0] == TokenType.ATTR:
                     self.match(TokenType.ATTR)
