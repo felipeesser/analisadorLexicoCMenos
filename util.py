@@ -144,6 +144,8 @@ def printTree(tree, i):
             tree_string += f'Call: {tree.attr}\n'
         elif tree.type == 'VAR':
             tree_string += f'Var: {tree.attr}\n'
+        elif tree.type == 'ARGS':
+            tree_string += 'Args:\n'
         i += 1
         for child in tree.children:
             tree_string += printTree(child, i)

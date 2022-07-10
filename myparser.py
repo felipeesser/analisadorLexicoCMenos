@@ -162,10 +162,10 @@ class Parser:
         self.match(TokenType.PARENT_OP)
         t.children.append(self.expression())
         self.match(TokenType.PARENT_ED)
-        self.statement()
+        t.children.append(self.statement())
         if self.token[0] == TokenType.ELSE:
             self.match(TokenType.ELSE)
-            self.statement()
+            t.children.append(self.statement())
         return t
 
     def iteration_stmt(self):
@@ -173,9 +173,9 @@ class Parser:
         t.type = 'ITERATION-STMT'
         self.match(TokenType.WHILE)
         self.match(TokenType.PARENT_OP)
-        self.expression()
+        t.children.append(self.expression())
         self.match(TokenType.PARENT_ED)
-        self.statement()
+        t.children.append(self.statement())
         return t
 
     def return_stmt(self):
@@ -184,7 +184,7 @@ class Parser:
         self.match(TokenType.RETURN)
         if (self.token[0] == TokenType.PONTO_VIRGULA or self.token[0] == TokenType.ID or
                 self.token[0] == TokenType.PARENT_OP or self.token[0] == TokenType.NUM):
-            self.expression()
+            t.children.append(self.expression())
         self.match(TokenType.PONTO_VIRGULA)
         return t
 
@@ -193,7 +193,7 @@ class Parser:
         t.type = 'EXPRESSION-STMT'
         if (self.token[0] == TokenType.PONTO_VIRGULA or self.token[0] == TokenType.ID or
                 self.token[0] == TokenType.PARENT_OP or self.token[0] == TokenType.NUM):
-            self.expression()
+            t.children.append(self.expression())
         self.match(TokenType.PONTO_VIRGULA)
         return t
 
@@ -222,13 +222,6 @@ class Parser:
             p = q
         p.children.append(self.simple_expression())
         return t
-
-    def var(self):
-        self.match(TokenType.ID)
-        if self.token[0] == TokenType.COLCH_OP:
-            self.match(TokenType.COLCH_OP)
-            self.expression()
-            self.match(TokenType.COLCH_ED)
 
     def simple_expression(self):
         t = TreeNode()
@@ -317,7 +310,7 @@ class Parser:
             if self.token[0] == TokenType.PARENT_OP:  # call
                 p.type = 'CALL'
                 self.match(TokenType.PARENT_OP)
-                self.args()
+                p.children.append(self.args())
                 self.match(TokenType.PARENT_ED)
             else:  # var
                 p.type = 'VAR'
@@ -339,7 +332,10 @@ class Parser:
         return t
 
     def args(self):
-        self.expression()
+        t = TreeNode()
+        t.type = 'ARGS'
+        t.children.append(self.expression())
         while self.token[0] == TokenType.VIRGULA:
             self.match(TokenType.VIRGULA)
-            self.expression()
+            t.children.append(self.expression())
+        return t
