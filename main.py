@@ -1,17 +1,17 @@
 import sys
 
+from myparser import Parser
 from scanner import Scanner
-from util import TokenType
-from parser import Parser
+
 
 def main():
     if len(sys.argv) == 2:
-        # scan = Scanner(sys.argv[1])
-        # token = scan.getToken()
-        # while token != TokenType.EOF:
-        #     token = scan.getToken()
-        parse=Parser(sys.argv[1])
-        print(parse.program())
+        filename = sys.argv[1]
+        scanner = Scanner(filename)
+        parse = Parser(scanner)
+        tree = parse.parse()
+        print('\nSyntax tree\n')
+        print(tree)
     else:
         print('Não foi passado arquivo de entrada')
 

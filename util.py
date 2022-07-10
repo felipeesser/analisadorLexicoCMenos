@@ -1,7 +1,8 @@
 from enum import Enum
 
-
 # Enum para os tipos de token
+
+
 class TokenType(Enum):
     ID = 1
     NUM = 2

@@ -15,15 +15,15 @@ class Scanner:
         self.current_line = self.program[self.lineno]
         print(str(self.lineno + 1) + ": " + self.current_line)
         self.current_line += '\n'
-        
+
     def getNextChar(self):
         try:
             self.linepos += 1
             return self.current_line[self.linepos]
-        except: #Line completely read
+        except:  # Line completely read
             try:
                 self.__getNextLine()
-            except: #Program completely read
+            except:  # Program completely read
                 return 'EOF'
             return self.getNextChar()
 
@@ -152,5 +152,5 @@ class Scanner:
                 token_string += c
         if current_token == TokenType.ID:
             current_token = util.reservedLookup(token_string)
-        util.printToken(current_token, token_string, self.lineno+1)
-        return [current_token,token_string,self.lineno+1]
+        util.printToken(current_token, token_string, self.lineno + 1)
+        return [current_token, token_string, self.lineno + 1]
