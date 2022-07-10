@@ -8,14 +8,12 @@ class Parser:
         self.token = None
         self.prevToken = None
 
-    # TODO: revisar
     def match(self, expectedToken):
         if self.token[0] == expectedToken:
             self.token = self.scanner.getToken()
         else:
             self.error(expectedToken)
 
-    # TODO: revisar
     def error(self, expectedToken):
         print(f'Erro na linha {self.token[2]} : Esperando token {expectedToken.name} no lugar de {self.token[1]}')
         exit(1)
@@ -38,12 +36,15 @@ class Parser:
 
     def declaration(self):
         t = TreeNode()
-        self.type_specifier()
-        t.attr = self.token[1]
+        t.children.append(self.type_specifier())
+        id_node = TreeNode()
+        id_node.type = 'ID'
+        id_node.attr = self.token[1]
         self.match(TokenType.ID)
+        t.children.append(id_node)
         if self.token[0] == TokenType.PARENT_OP:  # fun_declaration
             self.match(TokenType.PARENT_OP)
-            t.children = self.params()
+            t.children.append(self.params())
             self.match(TokenType.PARENT_ED)
             self.compound_stmt()
             t.type = 'FUN-DECLARATION'
@@ -57,18 +58,24 @@ class Parser:
         return t
 
     def type_specifier(self):
+        t = TreeNode()
+        t.type = 'TYPE-SPECIFIER'
         if self.token[0] == TokenType.INT:
             self.match(TokenType.INT)
+            t.attr = 'int'
         elif self.token[0] == TokenType.VOID:
             self.match(TokenType.VOID)
+            t.attr = 'void'
+        return t
 
     def params(self):
         t = TreeNode()
         t.type = 'PARAMS'
         if self.token[0] == TokenType.VOID:
-            return self.match(TokenType.VOID)
+            self.match(TokenType.VOID)
         else:
-            return self.param_list()
+            t.children.append(self.param_list())
+        return t
 
     def param_list(self):
         params = []
@@ -78,16 +85,20 @@ class Parser:
         while self.token[0] == TokenType.VIRGULA:
             self.match(TokenType.VIRGULA)
             q = self.param()
-            # p.sibling = q
+            p.sibling = q
             p = q
             params.append(q)
-        return params
+        return t
 
     def param(self):
         t = TreeNode()
-        self.type_specifier()
-        t.attr = self.token[1]
+        t.children.append(self.type_specifier())
+        id_node = TreeNode()
+        id_node.type = 'ID'
+        id_node.attr = self.token[1]
         self.match(TokenType.ID)
+        t.children.append(id_node)
+        t.attr = self.token[1]
         if self.token[0] == TokenType.COLCH_OP:
             self.match(TokenType.COLCH_OP)
             self.match(TokenType.COLCH_ED)
@@ -112,9 +123,10 @@ class Parser:
             self.match(TokenType.PONTO_VIRGULA)
 
     def statement_list(self):
-        while (self.token[0] == TokenType.PONTO_VIRGULA or self.token[0] == TokenType.ID or self.token[0] == TokenType.PARENT_OP
-               or self.token[0] == TokenType.NUM or self.token[0] == TokenType.RETURN or self.token[0] == TokenType.CHAVES_OP
-               or self.token[0] == TokenType.IF or self.token[0] == TokenType.WHILE):
+        while (self.token[0] == TokenType.PONTO_VIRGULA or self.token[0] == TokenType.ID or
+               self.token[0] == TokenType.PARENT_OP or self.token[0] == TokenType.NUM or
+               self.token[0] == TokenType.RETURN or self.token[0] == TokenType.CHAVES_OP or
+               self.token[0] == TokenType.IF or self.token[0] == TokenType.WHILE):
             self.statement()
 
     def statement(self):
@@ -148,19 +160,19 @@ class Parser:
 
     def return_stmt(self):
         self.match(TokenType.RETURN)
-        if (self.token[0] == TokenType.PONTO_VIRGULA or self.token[0] == TokenType.ID or self.token[0] == TokenType.PARENT_OP
-                or self.token[0] == TokenType.NUM):
+        if (self.token[0] == TokenType.PONTO_VIRGULA or self.token[0] == TokenType.ID or
+                self.token[0] == TokenType.PARENT_OP or self.token[0] == TokenType.NUM):
             self.expression()
         self.match(TokenType.PONTO_VIRGULA)
 
     def expression_stmt(self):
-        if (self.token[0] == TokenType.PONTO_VIRGULA or self.token[0] == TokenType.ID or self.token[0] == TokenType.PARENT_OP
-                or self.token[0] == TokenType.NUM):
+        if (self.token[0] == TokenType.PONTO_VIRGULA or self.token[0] == TokenType.ID or
+                self.token[0] == TokenType.PARENT_OP or self.token[0] == TokenType.NUM):
             self.expression()
         self.match(TokenType.PONTO_VIRGULA)
 
     def expression(self):
-        while self.token[0] == TokenType.ID:  # TODO: aqui está ambiguo
+        while self.token[0] == TokenType.ID:
             self.match(TokenType.ID)
             if self.token[0] == TokenType.COLCH_OP:
                 self.match(TokenType.COLCH_OP)

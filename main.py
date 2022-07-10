@@ -2,6 +2,7 @@ import sys
 
 from myparser import Parser
 from scanner import Scanner
+from util import printTree
 
 
 def main():
@@ -11,7 +12,7 @@ def main():
         parse = Parser(scanner)
         tree = parse.parse()
         print('\nSyntax tree\n')
-        print(tree)
+        print(printTree(tree, 0))
     else:
         print('Não foi passado arquivo de entrada')
 

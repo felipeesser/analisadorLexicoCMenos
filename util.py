@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 # Enum para os tipos de token
 
 
@@ -95,3 +96,27 @@ def printToken(tokenType, tokenString, lineno):
         print(str(lineno) + ': ' + tokenType.name)
     else:
         print('    ' + str(lineno) + ': ' + tokenType.name + ', ' + tokenString)
+
+
+def printTree(tree, i):
+    tree_string = ''
+    while tree is not None:
+        tree_string += i * '  '
+        if tree.type == 'VAR-DECLARATION':
+            tree_string += 'Declaring variable:\n'
+        elif tree.type == 'FUN-DECLARATION':
+            tree_string += 'Declaring function:\n'
+        elif tree.type == 'TYPE-SPECIFIER':
+            tree_string += 'Type specifier: ' + tree.attr + '\n'
+        elif tree.type == 'ID':
+            tree_string += 'ID: ' + tree.attr + '\n'
+        elif tree.type == 'PARAMS':
+            tree_string += 'Params:\n'
+        elif tree.type == 'PARAM':
+            tree_string += 'Param:\n'
+        i += 1
+        for child in tree.children:
+            tree_string += printTree(child, i)
+        tree = tree.sibling
+        i -= 1
+    return tree_string
