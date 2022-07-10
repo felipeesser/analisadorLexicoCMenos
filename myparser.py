@@ -46,7 +46,7 @@ class Parser:
             self.match(TokenType.PARENT_OP)
             t.children.append(self.params())
             self.match(TokenType.PARENT_ED)
-            self.compound_stmt()
+            t.children.append(self.compound_stmt())
             t.type = 'FUN-DECLARATION'
         else:  # var_declaration
             if self.token[0] == TokenType.COLCH_OP:
@@ -106,42 +106,58 @@ class Parser:
         return t
 
     def compound_stmt(self):
+        t = TreeNode()
+        t.type = 'COMPOUND-STMT'
         self.match(TokenType.CHAVES_OP)
-        self.local_declarations()
-        self.statement_list()
+        t.children += self.local_declarations()
+        t.children += self.statement_list()
         self.match(TokenType.CHAVES_ED)
+        return t
 
     def local_declarations(self):
         # var_declaration
+        declarations = []
         while self.token[0] == TokenType.INT or self.token[0] == TokenType.VOID:
-            self.type_specifier()
+            t = TreeNode()
+            t.type = 'VAR-DECLARATION'
+            t.children.append(self.type_specifier())
+            id_node = TreeNode()
+            id_node.type = 'ID'
+            id_node.attr = self.token[1]
             self.match(TokenType.ID)
+            t.children.append(id_node)
             if self.token[0] == TokenType.COLCH_OP:
                 self.match(TokenType.COLCH_OP)
                 self.match(TokenType.NUM)
                 self.match(TokenType.COLCH_ED)
             self.match(TokenType.PONTO_VIRGULA)
+            declarations.append(t)
+        return declarations
 
     def statement_list(self):
+        statements = []
         while (self.token[0] == TokenType.PONTO_VIRGULA or self.token[0] == TokenType.ID or
                self.token[0] == TokenType.PARENT_OP or self.token[0] == TokenType.NUM or
                self.token[0] == TokenType.RETURN or self.token[0] == TokenType.CHAVES_OP or
                self.token[0] == TokenType.IF or self.token[0] == TokenType.WHILE):
-            self.statement()
+            statements.append(self.statement())
+        return statements
 
     def statement(self):
         if self.token[0] == TokenType.RETURN:
-            self.return_stmt()
+            return self.return_stmt()
         elif self.token[0] == TokenType.CHAVES_OP:
             self.compound_stmt()
         elif self.token[0] == TokenType.IF:
-            self.selection_stmt()
+            return self.selection_stmt()
         elif self.token[0] == TokenType.WHILE:
-            self.iteration_stmt()
+            return self.iteration_stmt()
         else:
-            self.expression_stmt()
+            return self.expression_stmt()
 
     def selection_stmt(self):
+        t = TreeNode()
+        t.type = 'SELECTION-STMT'
         self.match(TokenType.IF)
         self.match(TokenType.PARENT_OP)
         self.expression()
@@ -150,26 +166,36 @@ class Parser:
         if self.token[0] == TokenType.ELSE:
             self.match(TokenType.ELSE)
             self.statement()
+        return t
 
     def iteration_stmt(self):
+        t = TreeNode()
+        t.type = 'ITERATION-STMT'
         self.match(TokenType.WHILE)
         self.match(TokenType.PARENT_OP)
         self.expression()
         self.match(TokenType.PARENT_ED)
         self.statement()
+        return t
 
     def return_stmt(self):
+        t = TreeNode()
+        t.type = 'RETURN-STMT'
         self.match(TokenType.RETURN)
         if (self.token[0] == TokenType.PONTO_VIRGULA or self.token[0] == TokenType.ID or
                 self.token[0] == TokenType.PARENT_OP or self.token[0] == TokenType.NUM):
             self.expression()
         self.match(TokenType.PONTO_VIRGULA)
+        return t
 
     def expression_stmt(self):
+        t = TreeNode()
+        t.type = 'EXPRESSION-STMT'
         if (self.token[0] == TokenType.PONTO_VIRGULA or self.token[0] == TokenType.ID or
                 self.token[0] == TokenType.PARENT_OP or self.token[0] == TokenType.NUM):
             self.expression()
         self.match(TokenType.PONTO_VIRGULA)
+        return t
 
     def expression(self):
         while self.token[0] == TokenType.ID:

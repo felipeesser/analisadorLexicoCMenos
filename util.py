@@ -114,6 +114,16 @@ def printTree(tree, i):
             tree_string += 'Params:\n'
         elif tree.type == 'PARAM':
             tree_string += 'Param:\n'
+        elif tree.type == 'COMPOUND-STMT':
+            tree_string += 'Compound statement:\n'
+        elif tree.type == 'SELECTION-STMT':
+            tree_string += 'If:\n'
+        elif tree.type == 'ITERATION-STMT':
+            tree_string += 'While:\n'
+        elif tree.type == 'RETURN-STMT':
+            tree_string += 'Return:\n'
+        elif tree.type == 'EXPRESSION-STMT':
+            tree_string += 'Expression statement:\n'
         i += 1
         for child in tree.children:
             tree_string += printTree(child, i)
