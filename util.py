@@ -107,7 +107,7 @@ def printTree(tree, i):
         elif tree.type == 'FUN-DECLARATION':
             tree_string += 'Declaring function:\n'
         elif tree.type == 'TYPE-SPECIFIER':
-            tree_string += 'Type specifier: ' + tree.attr + '\n'
+            tree_string += 'Type: ' + tree.attr + '\n'
         elif tree.type == 'ID':
             tree_string += 'ID: ' + tree.attr + '\n'
         elif tree.type == 'PARAMS':
@@ -124,6 +124,12 @@ def printTree(tree, i):
             tree_string += 'Return:\n'
         elif tree.type == 'EXPRESSION-STMT':
             tree_string += 'Expression statement:\n'
+        elif tree.type == 'ASSIGN':
+            tree_string += f'Assign to: {tree.attr}\n'
+        elif tree.type == 'SIMPLE-EXPRESSION':
+            tree_string += 'Simple expression:\n'
+        elif tree.type == 'EXPRESSION':
+            tree_string += 'Expression:\n'
         i += 1
         for child in tree.children:
             tree_string += printTree(child, i)

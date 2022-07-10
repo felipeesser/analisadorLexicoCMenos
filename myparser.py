@@ -160,7 +160,7 @@ class Parser:
         t.type = 'SELECTION-STMT'
         self.match(TokenType.IF)
         self.match(TokenType.PARENT_OP)
-        self.expression()
+        t.children.append(self.expression())
         self.match(TokenType.PARENT_ED)
         self.statement()
         if self.token[0] == TokenType.ELSE:
@@ -198,7 +198,12 @@ class Parser:
         return t
 
     def expression(self):
+        t = TreeNode()
+        t.type = 'EXPRESSION'
+        p = t
         while self.token[0] == TokenType.ID:
+            q = TreeNode()
+            q.attr = self.token[1]
             self.match(TokenType.ID)
             if self.token[0] == TokenType.COLCH_OP:
                 self.match(TokenType.COLCH_OP)
@@ -209,9 +214,13 @@ class Parser:
                 if self.token[0] == TokenType.ATTR:
                     self.match(TokenType.ATTR)
                 else:
+                    self.prevToken = TokenType.ID
                     break
-        self.prevToken = TokenType.ID
-        self.simple_expression()
+            q.type = 'ASSIGN'
+            p.children.append(q)
+            p = q
+        p.children.append(self.simple_expression())
+        return t
 
     def var(self):
         self.match(TokenType.ID)
@@ -221,12 +230,15 @@ class Parser:
             self.match(TokenType.COLCH_ED)
 
     def simple_expression(self):
+        t = TreeNode()
+        t.type = 'SIMPLE-EXPRESSION'
         self.additive_expression()
         if (self.token[0] == TokenType.GREAT or self.token[0] == TokenType.GREAT_EQUAL or
                 self.token[0] == TokenType.EQUAL or self.token[0] == TokenType.LESS or
                 self.token[0] == TokenType.LESS_EQUAL or self.token[0] == TokenType.DIF):
             self.relop()
             self.additive_expression()
+        return t
 
     def relop(self):
         if self.token[0] == TokenType.GREAT:
