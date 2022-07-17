@@ -41,10 +41,11 @@ class Parser:
         id_node = TreeNode()
         id_node.type = 'ID'
         id_node.attr = self.token[1]
+        id_line = self.token[2]
         self.match(TokenType.ID)
         t.children.append(id_node)
         if self.token[0] == TokenType.PARENT_OP:  # fun_declaration
-            self.identifiers_table.append(self.identifiers_table[-1].copy())
+            self.identifiers_table.append([])
             self.match(TokenType.PARENT_OP)
             p = self.params()
             params = []
@@ -63,6 +64,9 @@ class Parser:
                 self.match(TokenType.COLCH_ED)
             self.match(TokenType.PONTO_VIRGULA)
             t.type = 'VAR-DECLARATION'
+            if self.check_var_declaration(id_node.attr):
+                print(f'Erro na linha {id_line}: Variável {id_node.attr} não pode ser declarada novamente')
+                exit(1)
             self.identifiers_table[-1].append(id_node.attr)
         return t
 
@@ -115,7 +119,7 @@ class Parser:
         t = TreeNode()
         t.type = 'COMPOUND-STMT'
         self.match(TokenType.CHAVES_OP)
-        self.identifiers_table.append(self.identifiers_table[-1].copy())
+        self.identifiers_table.append([])
         t.children += self.local_declarations()
         t.children += self.statement_list()
         self.match(TokenType.CHAVES_ED)
@@ -132,8 +136,12 @@ class Parser:
             id_node = TreeNode()
             id_node.type = 'ID'
             id_node.attr = self.token[1]
+            id_line = self.token[2]
             self.match(TokenType.ID)
             t.children.append(id_node)
+            if self.check_var_declaration(id_node.attr):
+                print(f'Erro na linha {id_line}: Variável {id_node.attr} não pode ser declarada novamente')
+                exit(1)
             self.identifiers_table[-1].append(id_node.attr)
             if self.token[0] == TokenType.COLCH_OP:
                 self.match(TokenType.COLCH_OP)
@@ -231,8 +239,7 @@ class Parser:
             q.type = 'ASSIGN'
             p.children.append(q)
             p = q
-            available_vars = self.identifiers_table[-1]
-            if p.attr not in available_vars:
+            if not self.check_var_declaration(p.attr):
                 print(f'Erro na linha {id_line}: Variável {p.attr} sendo utilizada antes de sua declaração')
                 exit(1)
         p.children.append(self.simple_expression())
@@ -335,8 +342,7 @@ class Parser:
                     self.match(TokenType.COLCH_OP)
                     p.children.append(self.expression())
                     self.match(TokenType.COLCH_ED)
-                available_vars = self.identifiers_table[-1]
-                if p.attr not in available_vars:
+                if not self.check_var_declaration(p.attr):
                     print(f'Erro na linha {id_line}: Variável {p.attr} sendo utilizada antes de sua declaração')
                     exit(1)
             t.children.append(p)
@@ -360,3 +366,9 @@ class Parser:
             self.match(TokenType.VIRGULA)
             t.children.append(self.expression())
         return t
+
+    def check_var_declaration(self, var):
+        for scope in self.identifiers_table:
+            if var in scope:
+                return True
+        return False
